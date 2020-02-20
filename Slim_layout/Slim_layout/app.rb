@@ -3,6 +3,7 @@ require "sinatra"
 require "sqlite3"
 require "bcrypt"
 require "highline/import"
+require_relative "model.rb"
 
 enable :sessions
 
@@ -179,4 +180,10 @@ post("/sign_up") do
         create_user = db.execute("INSERT INTO users (username, email, password) values (?,?,?)",[username, email, password_digest])
         redirect("/logged_in")
     end
+end
+
+get("/profile") do
+    profile_pic = db.execute("SELECT avatar FROM users WHERE user_id = ?", [session[:user_id]])
+    p profile_pic
+    slim(:profile, locals: {profile_pic: profile_pic})
 end
