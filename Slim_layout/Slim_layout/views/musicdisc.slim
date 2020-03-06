@@ -1,1 +1,25 @@
-h1 hello
+    div class="comments"
+      h1 Comments
+      form action="/#{song_id}/comment" method="post" class="comment_form"
+        input type="text" name="comment" 
+        input type="submit" value="comment"
+    -comments_info.each do |comment|
+      .comment
+      -if comment["song_id"] == song_id
+        p = comment["username"]
+        p = comment["comment"]
+        form action="/#{song_id}/comment" method="post" class="comment_form"
+          input(type="text" name="parent_id" value="#{comment['comment_id']}" hidden)
+          input type="text" name="comment" placeholder="Reply to #{comment['username']}"
+          input type="submit" value="reply"
+        p Replies
+        -comment["replies"].each do |reply|
+          .reply
+            p = reply["username"]
+            p = reply["comment"]
+            form action="/#{song_id}/comment" method="post" class="comment_form"
+              input(type="text" name="parent_id" value="#{comment['comment_id']}" hidden)
+              input type="text" name="comment"
+              input type="submit" value="reply"
+        br
+        br

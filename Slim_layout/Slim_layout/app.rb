@@ -65,7 +65,6 @@ get("/upload") do
 end
 
 post("/upload") do
-    p params[:file]
     unless params[:file] &&
             (tempfile = params[:file][:tempfile]) &&
             (name = params[:file][:filename])
@@ -112,7 +111,6 @@ get("/logged_in") do
     comments_info = {}
 
     allcommentinfo.each do |comment|
-        p comment["parent_id"]
         if !comment["parent_id"]
             comments_info[comment["comment_id"]] = comment
             comment["replies"] = []
@@ -131,14 +129,43 @@ get("/logged_in") do
 end
 
 get("/:i/musicdisc") do
-    slim(:musicdisc)
+    song_id = params[:i]
+    allinfo = db.execute("SELECT * FROM users WHERE user_id=?", session[:user_id])[0]
+    allcommentinfo = db.execute("""
+        SELECT comments.*, users.username FROM comments
+        INNER JOIN users
+        ON users.user_id = comments.user_id
+        """)
+
+    comments_info = {}
+
+    allcommentinfo.each do |comment|
+        if !comment["parent_id"]
+            comments_info[comment["comment_id"]] = comment
+            comment["replies"] = []
+        else
+            parent_id = comment["parent_id"]
+            comments_info[parent_id]["replies"] << comment
+        end
+    end
+    slim(:musicdisc, locals: {comments_info: comments_info.values, song_id: song_id})
 end
 
 post("/comment") do
     comment = params[:comment]
     parent_id = params[:parent_id]
-    db.execute("INSERT INTO comments (comment, user_id, parent_id) VALUES (?, #{session[:user_id]}, ?)", [comment, parent_id])
+    song_id = params[:id]
+    db.execute("INSERT INTO comments (comment, user_id, parent_id, song_id) VALUES (?, #{session[:user_id]}, ?, ?)", [comment, parent_id, song_id])
     redirect("/logged_in")
+end
+
+post("/:id/comment") do
+    comment = params[:comment]
+    parent_id = params[:parent_id]
+    song_id = params[:id]
+    puts song_id
+    db.execute("INSERT INTO comments (comment, user_id, parent_id, song_id) VALUES (?, #{session[:user_id]}, ?, ?)", [comment, parent_id, song_id])
+    redirect("/#{song_id}/musicdisc")
 end
 
 get("/sign_in") do
@@ -183,7 +210,29 @@ post("/sign_up") do
 end
 
 get("/profile") do
-    profile_pic = db.execute("SELECT avatar FROM users WHERE user_id = ?", [session[:user_id]])
-    p profile_pic
-    slim(:profile, locals: {profile_pic: profile_pic})
+    profile_pic = db.execute("SELECT avatar FROM users WHERE user_id = ?", [session[:user_id]])[0][0]
+    user_comments = db.execute("SELECT comment FROM comments WHERE user_id = ?", [session[:user_id]])
+
+    user_songs = []
+    user_files = db.execute("SELECT file_name FROM files WHERE user_id = ?", [session[:user_id]])
+    user_files.each do |i|
+        if File.extname(i["file_name"]) == ".mp3" || File.extname(i["file_name"]) == ".wav"
+            user_songs << i["file_name"]
+        end
+    end
+
+    slim(:profile, locals: {profile_pic: profile_pic, user_comments: user_comments, user_songs: user_songs})
+end
+
+post("/:id/delete") do
+    todo_id = params[:id]
+    db.execute("DELETE FROM files WHERE file_name = ?",todo_id)
+    redirect("/profile")
+end
+
+post("/:id/edit") do
+    comment_id = params[:id] #Ta reda på hur du ska få tag på comment_id från slim
+    new_comment = params[:comment]
+    db.execute("UPDATE comments SET comment = ? WHERE comment_id = ?",[new_comment, comment_id])
+    redirect("/profile")
 end

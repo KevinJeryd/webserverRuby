@@ -1,1 +1,14 @@
-img src="#{profile_pic}" alt=""/
+img class="profile_pic" src="#{profile_pic}" alt=""/
+
+h1 Your comments
+-user_comments.each do |i|
+    p = i["comment"]
+    form action="#{i}/edit" method="post"
+        textarea name="comment" = i["comment"]
+        button type="submit" Update
+
+h1 Your songs
+-user_songs.each do |i|
+    p = i
+    form action="#{i}/delete" method="post"
+        button type="submit" Delete     
