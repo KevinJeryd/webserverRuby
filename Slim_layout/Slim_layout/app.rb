@@ -151,21 +151,23 @@ get("/:i/musicdisc") do
     slim(:musicdisc, locals: {comments_info: comments_info.values, song_id: song_id})
 end
 
+=begin 
+Om jag skulle vilja ha ett "main" kommentarfält på start sidan
 post("/comment") do
     comment = params[:comment]
     parent_id = params[:parent_id]
     song_id = params[:id]
     db.execute("INSERT INTO comments (comment, user_id, parent_id, song_id) VALUES (?, #{session[:user_id]}, ?, ?)", [comment, parent_id, song_id])
     redirect("/logged_in")
-end
+end 
+=end
 
 post("/:id/comment") do
     comment = params[:comment]
     parent_id = params[:parent_id]
     song_id = params[:id]
-    puts song_id
     db.execute("INSERT INTO comments (comment, user_id, parent_id, song_id) VALUES (?, #{session[:user_id]}, ?, ?)", [comment, parent_id, song_id])
-    redirect("/#{song_id}/musicdisc")
+    redirect("/logged_in")
 end
 
 get("/sign_in") do
@@ -211,7 +213,7 @@ end
 
 get("/profile") do
     profile_pic = db.execute("SELECT avatar FROM users WHERE user_id = ?", [session[:user_id]])[0][0]
-    user_comments = db.execute("SELECT comment FROM comments WHERE user_id = ?", [session[:user_id]])
+    user_comments = db.execute("SELECT * FROM comments WHERE user_id = ?", [session[:user_id]])
 
     user_songs = []
     user_files = db.execute("SELECT file_name FROM files WHERE user_id = ?", [session[:user_id]])
@@ -231,7 +233,7 @@ post("/:id/delete") do
 end
 
 post("/:id/edit") do
-    comment_id = params[:id] #Ta reda på hur du ska få tag på comment_id från slim
+    comment_id = params[:id]
     new_comment = params[:comment]
     db.execute("UPDATE comments SET comment = ? WHERE comment_id = ?",[new_comment, comment_id])
     redirect("/profile")

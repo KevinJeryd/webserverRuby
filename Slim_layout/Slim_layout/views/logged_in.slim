@@ -41,29 +41,29 @@
           audio controls = true
             source src="audio/transcriptions/#{i}.mp3" type="audio/mpeg"
     
-    div class="comments"
-      h1 Comments
-      form action="/comment" method="post" class="comment_form"
-        input type="text" name="comment" 
-        input type="submit" value="comment"
-    -comments_info.each do |comment|
-      .comment
-        p = comment["username"]
-        p = comment["comment"]
-        form action="/comment" method="post" class="comment_form"
-          input(type="text" name="parent_id" value="#{comment['comment_id']}" hidden)
-          input type="text" name="comment" placeholder="Reply to #{comment['username']}"
-          input type="submit" value="reply"
-        p Replies
-        -comment["replies"].each do |reply|
-          .reply
-            p = reply["username"]
-            p = reply["comment"]
-            form action="/comment" method="post" class="comment_form"
-              input(type="text" name="parent_id" value="#{comment['comment_id']}" hidden)
-              input type="text" name="comment"
-              input type="submit" value="reply"
-        br
-        br
+    / div class="comments"
+    /   h1 Comments
+    /   form action="/comment" method="post" class="comment_form"
+    /     input type="text" name="comment" 
+    /     input type="submit" value="comment"
+    / -comments_info.each do |comment|
+    /   .comment
+    /     p = comment["username"]
+    /     p = comment["comment"]
+    /     form action="/comment" method="post" class="comment_form"
+    /       input(type="text" name="parent_id" value="#{comment['comment_id']}" hidden)
+    /       input type="text" name="comment" placeholder="Reply to #{comment['username']}"
+    /       input type="submit" value="reply"
+    /     p Replies
+    /     -comment["replies"].each do |reply|
+    /       .reply
+    /         p = reply["username"]
+    /         p = reply["comment"]
+    /         form action="/comment" method="post" class="comment_form"
+    /           input(type="text" name="parent_id" value="#{comment['comment_id']}" hidden)
+    /           input type="text" name="comment"
+    /           input type="submit" value="reply"
+    /     br
+    /     br
         /p #{usernames[i["user_id"]][0]}
     

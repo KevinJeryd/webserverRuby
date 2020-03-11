@@ -2,8 +2,7 @@ img class="profile_pic" src="#{profile_pic}" alt=""/
 
 h1 Your comments
 -user_comments.each do |i|
-    p = i["comment"]
-    form action="#{i}/edit" method="post"
+    form action="#{i["comment_id"]}/edit" method="post"
         textarea name="comment" = i["comment"]
         button type="submit" Update
 
