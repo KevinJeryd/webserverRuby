@@ -215,6 +215,9 @@ get("/profile") do
     profile_pic = db.execute("SELECT avatar FROM users WHERE user_id = ?", [session[:user_id]])[0][0]
     user_comments = db.execute("SELECT * FROM comments WHERE user_id = ?", [session[:user_id]])
 
+    comp_without_ext << File.basename(compos,File.extname(compos))
+    trans_without_ext << File.basename(transis, File.extname(transis))
+
     user_songs = []
     user_files = db.execute("SELECT file_name FROM files WHERE user_id = ?", [session[:user_id]])
     user_files.each do |i|

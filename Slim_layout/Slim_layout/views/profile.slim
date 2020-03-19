@@ -1,3 +1,5 @@
+a href="/logged_in" Go back
+
 img class="profile_pic" src="#{profile_pic}" alt=""/
 
 h1 Your comments
@@ -5,6 +7,8 @@ h1 Your comments
     form action="#{i["comment_id"]}/edit" method="post"
         textarea name="comment" = i["comment"]
         button type="submit" Update
+    p comment is in the thread 
+    a href="/#{i["song_id"]}/musicdisc" #{i["song_id"]}
 
 h1 Your songs
 -user_songs.each do |i|
