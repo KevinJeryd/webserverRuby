@@ -1,8 +1,8 @@
 header
   aside class="kevin"
-    a href="files/dashboard" Welcome! #{allinfo["username"]}
+    a href="/dashboard" Welcome! #{allinfo["username"]}
   nav
-    a href="/files/new"Upload
+    a href="/files/new" Upload
     div class="dropdown2"
       a onclick="myFunction2()" class="projects"Projects
     div class="dropdown"
@@ -10,16 +10,16 @@ header
     div class="dropdown"
       a onclick="myFunction3()" class="transcriptions"#{files[1]}
     div class="profile"
-      a href="/profile"Profile
-    a href="/" class="sign-in-btn"Log Out
+      a href="/profile" Profile
+    a href="/" class="sign-in-btn" Log Out
 div class="musicportfolio"
   div id="myDropdown" class="dropdown-content2"
-    form action="/files/dashboard" method="get" class="searchbar"
+    form action="/dashboard" method="get" class="searchbar"
       input type="text" name="search" placeholder="Search"
       input type="submit" class="searchbtn" value="Search"
     -if search == nil or search == ""
       -comp_without_ext.each do |i|
-        a href="files/#{i}/show" = i 
+        a href="/files/#{i}" = i 
         audio controls = true
           source src="audio/compositions/#{i}.mp3" type="audio/mpeg"
     -else

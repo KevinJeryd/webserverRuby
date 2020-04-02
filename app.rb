@@ -2,7 +2,7 @@ require "slim"
 require "sinatra"
 require "sqlite3"
 require "bcrypt"
-require "highline/import"
+# require "highline/import"
 require_relative "model.rb"
 
 enable :sessions
@@ -43,18 +43,6 @@ get("/must_be_logged_in_error") do
     # slim(:must_be_logged_in_error)
 end
 
-# get("/index") do
-#     session[:user_id] = nil
-#     slim(:index, locals:{files:files, comp:comp, trans:trans, progproj:progproj})
-# end
-
-# get("/project") do
-#     if session[:user_id] == nil 
-#         redirect('/must_be_logged_in_error')
-#     else
-#         slim(:projects, locals:{files:files, comp:comp, trans:trans, progproj:progproj})
-#     end
-# end
 
 get("/files/new") do
     if session[:user_id] == nil 
@@ -69,7 +57,7 @@ post("/files/new") do
             (tempfile = params[:file][:tempfile]) &&
             (name = params[:file][:filename])
         @error = "No file selected"
-        return slim(:"files")
+        return slim(:"dashboard")
     end
 
     upload_date = Time.new.inspect.split(" +")[0]
@@ -87,19 +75,14 @@ post("/files/new") do
     end
     File.open(target, "wb") {|f| f.write tempfile.read}
     "Upload complete"
-    redirect("/files")
-end
-
-get("/web") do
-    allinfo = db.execute("SELECT * FROM users WHERE user_id=?", session[:user_id])[0]
-    slim(:web, locals: {allinfo: allinfo})
+    redirect("/dashboard")
 end
 
 get("/error") do
     slim(:error)
 end
 
-get("/files") do
+get("/dashboard") do
 
     allinfo = db.execute("SELECT * FROM users WHERE user_id=?", session[:user_id])[0]
     allcommentinfo = db.execute("""
@@ -124,11 +107,11 @@ get("/files") do
     if session[:user_id] == nil
         redirect('/must_be_logged_in_error')
     else
-        slim(:"files/dashboard", locals: {search: search, comments_info: comments_info.values, allinfo: allinfo, files:files, comp_without_ext: comp_without_ext, trans_without_ext: trans_without_ext, progproj:progproj})
+        slim(:"dashboard", locals: {search: search, comments_info: comments_info.values, allinfo: allinfo, files:files, comp_without_ext: comp_without_ext, trans_without_ext: trans_without_ext, progproj:progproj})
     end
 end
 
-get("/:i/musicdisc") do
+get("/files/:i") do
     song_id = params[:i]
     allinfo = db.execute("SELECT * FROM users WHERE user_id=?", session[:user_id])[0]
     allcommentinfo = db.execute("""
@@ -148,7 +131,7 @@ get("/:i/musicdisc") do
             comments_info[parent_id]["replies"] << comment
         end
     end
-    slim(:musicdisc, locals: {comments_info: comments_info.values, song_id: song_id})
+    slim(:"files/show", locals: {comments_info: comments_info.values, song_id: song_id})
 end
 
 =begin 
@@ -162,19 +145,19 @@ post("/comment") do
 end 
 =end
 
-post("/:id/comment") do
+post("/files/:id/comment") do
     comment = params[:comment]
     parent_id = params[:parent_id]
     song_id = params[:id]
     db.execute("INSERT INTO comments (comment, user_id, parent_id, song_id) VALUES (?, #{session[:user_id]}, ?, ?)", [comment, parent_id, song_id])
-    redirect("/logged_in")
+    redirect("/dashboard")
 end
 
-get("/sign_in") do
-    slim(:sign_in)
+get("/users/sign_in") do
+    slim(:"users/sign_in")
 end
 
-post("/sign_in") do
+post("/users/sign_in") do
     emailreg = params[:emailreg]
     session[:username] = emailreg
     passwordreg = params[:passwordreg]
@@ -187,17 +170,17 @@ post("/sign_in") do
     password_digest_reg = result.first["password"]
     if BCrypt::Password.new(password_digest_reg) == passwordreg
         session[:user_id] = result.first["user_id"]
-        redirect("/files")
+        redirect("/dashboard")
     else
         redirect("/error")
     end
 end
 
-get("/sign_up") do
-    slim(:sign_up)
+get("/users/new") do
+    slim(:"users/new")
 end
 
-post("/sign_up") do
+post("/users") do
     username = params[:username]
     email = params[:email]
     session[:username] = email
@@ -207,7 +190,7 @@ post("/sign_up") do
         redirect("/error_email_exist") 
     else
         create_user = db.execute("INSERT INTO users (username, email, password) values (?,?,?)",[username, email, password_digest])
-        redirect("/logged_in")
+        redirect("/dashboard")
     end
 end
 
@@ -226,13 +209,13 @@ get("/profile") do
     slim(:profile, locals: {profile_pic: profile_pic, user_comments: user_comments, user_songs: user_songs, comp_without_ext: comp_without_ext})
 end
 
-post("/:id/delete") do
+post("/files/:id/delete") do
     todo_id = params[:id]
     db.execute("DELETE FROM files WHERE file_name = ?",todo_id)
     redirect("/profile")
 end
 
-post("/:id/edit") do
+post("/files/:id/edit") do
     comment_id = params[:id]
     new_comment = params[:comment]
     db.execute("UPDATE comments SET comment = ? WHERE comment_id = ?",[new_comment, comment_id])

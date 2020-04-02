@@ -1,11 +1,11 @@
-a href="/logged_in" Go back
+a href="/dashboard" Go back
 
 audio controls = true
   source src="audio/compositions/#{song_id}.mp3" type="audio/mpeg"
 
 div class="comments"
   h1 Comments
-  form action="/#{song_id}/comment" method="post" class="comment_form"
+  form action="/files/#{song_id}/comment" method="post" class="comment_form"
     input type="text" name="comment" 
     input type="submit" value="comment"
 -comments_info.each do |comment|
@@ -13,7 +13,7 @@ div class="comments"
   -if comment["song_id"] == song_id
     p = comment["username"]
     p = comment["comment"]
-    form action="/#{song_id}/comment" method="post" class="comment_form"
+    form action="/files/#{song_id}/comment" method="post" class="comment_form"
       input(type="text" name="parent_id" value="#{comment['comment_id']}" hidden)
       input type="text" name="comment" placeholder="Reply to #{comment['username']}"
       input type="submit" value="reply"
@@ -22,7 +22,7 @@ div class="comments"
       .reply
         p = reply["username"]
         p = reply["comment"]
-        form action="/#{song_id}/comment" method="post" class="comment_form"
+        form action="/files/#{song_id}/comment" method="post" class="comment_form"
           input(type="text" name="parent_id" value="#{comment['comment_id']}" hidden)
           input type="text" name="comment"
           input type="submit" value="reply"
