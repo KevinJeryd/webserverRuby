@@ -43,33 +43,33 @@ get("/must_be_logged_in_error") do
     # slim(:must_be_logged_in_error)
 end
 
-get("/index") do
-    session[:user_id] = nil
-    slim(:index, locals:{files:files, comp:comp, trans:trans, progproj:progproj})
-end
+# get("/index") do
+#     session[:user_id] = nil
+#     slim(:index, locals:{files:files, comp:comp, trans:trans, progproj:progproj})
+# end
 
-get("/projects") do
+# get("/project") do
+#     if session[:user_id] == nil 
+#         redirect('/must_be_logged_in_error')
+#     else
+#         slim(:projects, locals:{files:files, comp:comp, trans:trans, progproj:progproj})
+#     end
+# end
+
+get("/files/new") do
     if session[:user_id] == nil 
         redirect('/must_be_logged_in_error')
     else
-        slim(:projects, locals:{files:files, comp:comp, trans:trans, progproj:progproj})
+        slim(:"files/new")
     end
 end
 
-get("/upload") do
-    if session[:user_id] == nil 
-        redirect('/must_be_logged_in_error')
-    else
-        slim(:upload)
-    end
-end
-
-post("/upload") do
+post("/files/new") do
     unless params[:file] &&
             (tempfile = params[:file][:tempfile]) &&
             (name = params[:file][:filename])
         @error = "No file selected"
-        return slim(:upload)
+        return slim(:"files")
     end
 
     upload_date = Time.new.inspect.split(" +")[0]
@@ -87,7 +87,7 @@ post("/upload") do
     end
     File.open(target, "wb") {|f| f.write tempfile.read}
     "Upload complete"
-    redirect("/logged_in")
+    redirect("/files")
 end
 
 get("/web") do
@@ -99,7 +99,7 @@ get("/error") do
     slim(:error)
 end
 
-get("/logged_in") do
+get("/files") do
 
     allinfo = db.execute("SELECT * FROM users WHERE user_id=?", session[:user_id])[0]
     allcommentinfo = db.execute("""
@@ -124,7 +124,7 @@ get("/logged_in") do
     if session[:user_id] == nil
         redirect('/must_be_logged_in_error')
     else
-        slim(:logged_in, locals: {search: search, comments_info: comments_info.values, allinfo: allinfo, files:files, comp_without_ext: comp_without_ext, trans_without_ext: trans_without_ext, progproj:progproj})
+        slim(:"files/dashboard", locals: {search: search, comments_info: comments_info.values, allinfo: allinfo, files:files, comp_without_ext: comp_without_ext, trans_without_ext: trans_without_ext, progproj:progproj})
     end
 end
 
@@ -187,7 +187,7 @@ post("/sign_in") do
     password_digest_reg = result.first["password"]
     if BCrypt::Password.new(password_digest_reg) == passwordreg
         session[:user_id] = result.first["user_id"]
-        redirect("/logged_in")
+        redirect("/files")
     else
         redirect("/error")
     end

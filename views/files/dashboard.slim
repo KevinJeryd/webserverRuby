@@ -1,8 +1,8 @@
 header
   aside class="kevin"
-    a href="logged_in" Welcome! #{allinfo["username"]}
+    a href="files/dashboard" Welcome! #{allinfo["username"]}
   nav
-    a href="/upload"Upload
+    a href="/files/new"Upload
     div class="dropdown2"
       a onclick="myFunction2()" class="projects"Projects
     div class="dropdown"
@@ -11,10 +11,10 @@ header
       a onclick="myFunction3()" class="transcriptions"#{files[1]}
     div class="profile"
       a href="/profile"Profile
-    a href="index" class="sign-in-btn"Log Out
+    a href="/" class="sign-in-btn"Log Out
 div class="musicportfolio"
   div id="myDropdown" class="dropdown-content2"
-    form action="/logged_in" method="get" class="searchbar"
+    form action="/files/dashboard" method="get" class="searchbar"
       input type="text" name="search" placeholder="Search"
       input type="submit" class="searchbtn" value="Search"
     -if search == nil or search == ""
