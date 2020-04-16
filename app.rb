@@ -33,17 +33,22 @@ end
 progproj = Dir.entries("public/programmingprojects")
 progproj = progproj[2..progproj.length-1]
 
+#Displays front page before logged in
+#
 get("/") do
     session[:user_id] = nil
     slim(:index, locals:{files:files, comp:comp, trans:trans, progproj:progproj})
 end
 
+#Displays error message when trying to access logged in content while unlogged
+#
 get("/must_be_logged_in_error") do
     redirect("/sign_in")
     # slim(:must_be_logged_in_error)
 end
 
-
+#Displays upload page
+#
 get("/files/new") do
     if session[:user_id] == nil 
         redirect('/must_be_logged_in_error')
@@ -52,6 +57,8 @@ get("/files/new") do
     end
 end
 
+#Uploads data to the database and redirects to the dashboard
+#
 post("/files/new") do
     unless params[:file] &&
             (tempfile = params[:file][:tempfile]) &&
@@ -78,10 +85,14 @@ post("/files/new") do
     redirect("/dashboard")
 end
 
+#Displays error page
+#
 get("/error") do
     slim(:error)
 end
 
+#Displays main page while logged in.
+#
 get("/dashboard") do
 
     allinfo = db.execute("SELECT * FROM users WHERE user_id=?", session[:user_id])[0]
@@ -111,6 +122,8 @@ get("/dashboard") do
     end
 end
 
+#Displays the page for chosen composition
+#
 get("/files/:i") do
     song_id = params[:i]
     allinfo = db.execute("SELECT * FROM users WHERE user_id=?", session[:user_id])[0]
@@ -145,6 +158,8 @@ post("/comment") do
 end 
 =end
 
+#Uploads a comment to the database
+#
 post("/files/:id/comment") do
     comment = params[:comment]
     parent_id = params[:parent_id]
@@ -153,10 +168,14 @@ post("/files/:id/comment") do
     redirect("/dashboard")
 end
 
+#Displays the sign in page
+#
 get("/users/sign_in") do
     slim(:"users/sign_in")
 end
 
+#Verifies the password and email and if correct logs in the user and redirects to either the logged in main page or error page if wrong.
+#
 post("/users/sign_in") do
     emailreg = params[:emailreg]
     session[:username] = emailreg
@@ -176,10 +195,14 @@ post("/users/sign_in") do
     end
 end
 
+#Displays the create user page
+#
 get("/users/new") do
     slim(:"users/new")
 end
 
+#Creates user and redirects to the logged in main page
+#
 post("/users") do
     username = params[:username]
     email = params[:email]
@@ -194,6 +217,8 @@ post("/users") do
     end
 end
 
+#Displays the profile page of the one logged in
+#
 get("/profile") do
     profile_pic = db.execute("SELECT avatar FROM users WHERE user_id = ?", [session[:user_id]])[0][0]
     user_comments = db.execute("SELECT * FROM comments WHERE user_id = ?", [session[:user_id]])
@@ -209,12 +234,16 @@ get("/profile") do
     slim(:profile, locals: {profile_pic: profile_pic, user_comments: user_comments, user_songs: user_songs, comp_without_ext: comp_without_ext})
 end
 
+#Deletes chosen file from the database and redirects to the profile page
+#
 post("/files/:id/delete") do
     todo_id = params[:id]
     db.execute("DELETE FROM files WHERE file_name = ?",todo_id)
     redirect("/profile")
 end
 
+#Edits the chosen comment and redirects to the profile
+#
 post("/files/:id/edit") do
     comment_id = params[:id]
     new_comment = params[:comment]
