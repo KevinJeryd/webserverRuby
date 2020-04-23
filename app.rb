@@ -7,9 +7,15 @@ require_relative "model.rb"
 
 enable :sessions
 
+
+#Måste fixa så att sång filerna som visas inte läses från public mappen
+#utan istället från databasen.
+#Annars kommer låtar som tagits bort fortfarande visas
+#Ett till problem med att läsa in filerna från public mappen är att jag
+#måste ladda om servern varje gång en ny fil laddas upp för att kunna sedan
+
 db = SQLite3::Database.new("db/database.db")
 db.results_as_hash = true
-
 existing_emails = db.execute("SELECT email FROM users")
 
 files = Dir.entries("public/audio")
@@ -68,7 +74,8 @@ post("/files/new") do
     end
 
     upload_date = Time.new.inspect.split(" +")[0]
-    db.execute("INSERT INTO files (user_id, file_name, upload_date) values (?, ?, ?)", [session[:user_id], name, upload_date])
+
+    upload_file(session[:user_id], name, upload_date)
 
     puts "Upload file, original name #{name.inspect}"
     fileextension = params[:file]["filename"]
@@ -78,7 +85,7 @@ post("/files/new") do
     else
         target = "public/img/#{name}"
         slimroute = "img/#{name}"
-        db.execute("UPDATE users SET avatar=? WHERE user_id=#{session[:user_id]}", slimroute)
+        upload_avatar(slimroute, session[:user_id])
     end
     File.open(target, "wb") {|f| f.write tempfile.read}
     "Upload complete"
@@ -95,30 +102,13 @@ end
 #
 get("/dashboard") do
 
-    allinfo = db.execute("SELECT * FROM users WHERE user_id=?", session[:user_id])[0]
-    allcommentinfo = db.execute("""
-        SELECT comments.*, users.username FROM comments
-        INNER JOIN users
-        ON users.user_id = comments.user_id
-        """)
-
-    comments_info = {}
-
-    allcommentinfo.each do |comment|
-        if !comment["parent_id"]
-            comments_info[comment["comment_id"]] = comment
-            comment["replies"] = []
-        else
-            parent_id = comment["parent_id"]
-            comments_info[parent_id]["replies"] << comment
-        end
-    end
+    allinfo = user_info(session[:user_id])
 
     search = params[:search]
     if session[:user_id] == nil
         redirect('/must_be_logged_in_error')
     else
-        slim(:"dashboard", locals: {search: search, comments_info: comments_info.values, allinfo: allinfo, files:files, comp_without_ext: comp_without_ext, trans_without_ext: trans_without_ext, progproj:progproj})
+        slim(:"dashboard", locals: {search: search, allinfo: allinfo, files:files, comp_without_ext: comp_without_ext, trans_without_ext: trans_without_ext, progproj:progproj})
     end
 end
 
@@ -126,12 +116,9 @@ end
 #
 get("/files/:i") do
     song_id = params[:i]
-    allinfo = db.execute("SELECT * FROM users WHERE user_id=?", session[:user_id])[0]
-    allcommentinfo = db.execute("""
-        SELECT comments.*, users.username FROM comments
-        INNER JOIN users
-        ON users.user_id = comments.user_id
-        """)
+    allinfo = user_info(session[:user_id])    
+    
+    allcommentinfo = comment_info()
 
     comments_info = {}
 
@@ -147,25 +134,14 @@ get("/files/:i") do
     slim(:"files/show", locals: {comments_info: comments_info.values, song_id: song_id})
 end
 
-=begin 
-Om jag skulle vilja ha ett "main" kommentarfält på start sidan
-post("/comment") do
-    comment = params[:comment]
-    parent_id = params[:parent_id]
-    song_id = params[:id]
-    db.execute("INSERT INTO comments (comment, user_id, parent_id, song_id) VALUES (?, #{session[:user_id]}, ?, ?)", [comment, parent_id, song_id])
-    redirect("/logged_in")
-end 
-=end
-
 #Uploads a comment to the database
 #
 post("/files/:id/comment") do
     comment = params[:comment]
     parent_id = params[:parent_id]
     song_id = params[:id]
-    db.execute("INSERT INTO comments (comment, user_id, parent_id, song_id) VALUES (?, #{session[:user_id]}, ?, ?)", [comment, parent_id, song_id])
-    redirect("/dashboard")
+    upload_comment(comment, parent_id, song_id)
+    redirect("/files/#{params[:id]}")
 end
 
 #Displays the sign in page
@@ -176,11 +152,12 @@ end
 
 #Verifies the password and email and if correct logs in the user and redirects to either the logged in main page or error page if wrong.
 #
+#
 post("/users/sign_in") do
     emailreg = params[:emailreg]
     session[:username] = emailreg
     passwordreg = params[:passwordreg]
-    result = db.execute("SELECT user_id, password FROM users WHERE email=?", emailreg)
+    result = confirm_user(emailreg)
 
     if result.empty?
         redirect("/error")
@@ -203,7 +180,7 @@ end
 
 #Creates user and redirects to the logged in main page
 #
-post("/users") do
+post("/users/new") do
     username = params[:username]
     email = params[:email]
     session[:username] = email
@@ -212,7 +189,7 @@ post("/users") do
     if existing_emails.include? email
         redirect("/error_email_exist") 
     else
-        create_user = db.execute("INSERT INTO users (username, email, password) values (?,?,?)",[username, email, password_digest])
+        create_user = create_user(username, email, password_digest)
         redirect("/dashboard")
     end
 end
@@ -220,11 +197,11 @@ end
 #Displays the profile page of the one logged in
 #
 get("/profile") do
-    profile_pic = db.execute("SELECT avatar FROM users WHERE user_id = ?", [session[:user_id]])[0][0]
-    user_comments = db.execute("SELECT * FROM comments WHERE user_id = ?", [session[:user_id]])
+    profile_pic = user_info(session[:user_id])["avatar"]
+    user_comments = user_comments(session[:user_id])
 
     user_songs = []
-    user_files = db.execute("SELECT file_name FROM files WHERE user_id = ?", [session[:user_id]])
+    user_files = user_files(session[:user_id])
     user_files.each do |i|
         if File.extname(i["file_name"]) == ".mp3" || File.extname(i["file_name"]) == ".wav"
             user_songs << i["file_name"]
@@ -238,7 +215,7 @@ end
 #
 post("/files/:id/delete") do
     todo_id = params[:id]
-    db.execute("DELETE FROM files WHERE file_name = ?",todo_id)
+    delete_file(todo_id)
     redirect("/profile")
 end
 
@@ -247,6 +224,6 @@ end
 post("/files/:id/edit") do
     comment_id = params[:id]
     new_comment = params[:comment]
-    db.execute("UPDATE comments SET comment = ? WHERE comment_id = ?",[new_comment, comment_id])
+    update_file(new_comment, comment_id) 
     redirect("/profile")
 end
