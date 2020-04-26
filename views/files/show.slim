@@ -1,7 +1,12 @@
 a href="/dashboard" Go back
 
-audio controls = true
-  source src="audio/compositions/#{song_id}.mp3" type="audio/mpeg"
+-if compositions_folder.include? song_id
+  audio controls = true
+    source src="audio/compositions/#{song_id}" type="audio/mpeg"
+
+-if transcriptions_folder.include? song_id
+  audio controls = true
+    source src="audio/transcriptions/#{song_id}" type="audio/mpeg"
 
 div class="comments"
   h1 Comments

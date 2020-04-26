@@ -18,24 +18,24 @@ div class="musicportfolio"
       input type="text" name="search" placeholder="Search"
       input type="submit" class="searchbtn" value="Search"
     -if search == nil or search == ""
-      -comp_without_ext.each do |i|
+      -comps.each do |i|
         a href="/files/#{i}" = i 
         audio controls = true
-          source src="audio/compositions/#{i}.mp3" type="audio/mpeg"
+          source src="audio/compositions/#{i}" type="audio/mpeg"
     -else
       a href="#" = search
       audio controls = true
-        source src="audio/compositions/#{search}.mp3" type="audio/mpeg"
+        source src="audio/compositions/#{search}" type="audio/mpeg"
 div class="programming"
   div id="myDropdown2" class="dropdown-content"
     -progproj.each do |name|
       a href="#{name}" = name 
 div class="transcriptions"
   div id="myDropdown3" class="dropdown-content3"
-    -trans_without_ext.each do |i|
-      a href="#" = i 
+    -trans.each do |i|
+      a href="/files/#{i}" = i 
       audio controls = true
-        source src="audio/transcriptions/#{i}.mp3" type="audio/mpeg"
+        source src="audio/transcriptions/#{i}" type="audio/mpeg"
 
 / div class="comments"
 /   h1 Comments

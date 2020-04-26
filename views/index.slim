@@ -13,7 +13,7 @@
 
     div class="musicportfolio"
       div id="myDropdown" class="dropdown-content2"
-        -comp.each do |i|
+        -comps.each do |i|
           a href="#" = i 
           audio controls = true
             source src="audio/compositions/#{i}" type="audio/mpeg"

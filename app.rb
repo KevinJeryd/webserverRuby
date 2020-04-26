@@ -7,12 +7,8 @@ require_relative "model.rb"
 
 enable :sessions
 
+#Fixa kommentarer, kolla ca rad 160
 
-#Måste fixa så att sång filerna som visas inte läses från public mappen
-#utan istället från databasen.
-#Annars kommer låtar som tagits bort fortfarande visas
-#Ett till problem med att läsa in filerna från public mappen är att jag
-#måste ladda om servern varje gång en ny fil laddas upp för att kunna sedan
 
 db = SQLite3::Database.new("db/database.db")
 db.results_as_hash = true
@@ -20,15 +16,40 @@ existing_emails = db.execute("SELECT email FROM users")
 
 files = Dir.entries("public/audio")
 files = files[2..files.length-1]
-comp = Dir.entries("public/audio/Compositions")
-#comp = db.execute("SELECT * FROM files")["file_name"]
-comp = comp[2..comp.length-1]
-trans = Dir.entries("public/audio/Transcriptions")
-trans = trans[2..trans.length-1]
+
+compositions_folder = Dir.entries("public/audio/Compositions")
+transcriptions_folder = Dir.entries("public/audio/Transcriptions")
+
+file_info = db.execute("SELECT * FROM files")
+
+comps = []
+trans = []
+
+before do
+    compositions_folder = Dir.entries("public/audio/Compositions")
+    transcriptions_folder = Dir.entries("public/audio/Transcriptions")
+    
+    file_info = db.execute("SELECT * FROM files")
+
+    comps = []
+    trans = []
+
+    file_info.each do |comp|
+        fileextension = comp["file_name"]
+        if File.extname("#{fileextension}") == ".mp3" or File.extname("#{fileextension}") == ".wav"
+            if compositions_folder.include? fileextension
+                comps << comp["file_name"]
+            else
+                trans << comp["file_name"]
+            end
+        end
+    end
+end
+
 comp_without_ext = []
 trans_without_ext = []
 
-comp.each do |compos|
+comps.each do |compos|
     comp_without_ext << File.basename(compos, File.extname(compos))
 end
 
@@ -43,13 +64,13 @@ progproj = progproj[2..progproj.length-1]
 #
 get("/") do
     session[:user_id] = nil
-    slim(:index, locals:{files:files, comp:comp, trans:trans, progproj:progproj})
+    slim(:index, locals:{files:files, comps:comps, trans:trans, progproj:progproj})
 end
 
 #Displays error message when trying to access logged in content while unlogged
 #
 get("/must_be_logged_in_error") do
-    redirect("/sign_in")
+    redirect("/users/sign_in")
     # slim(:must_be_logged_in_error)
 end
 
@@ -108,7 +129,7 @@ get("/dashboard") do
     if session[:user_id] == nil
         redirect('/must_be_logged_in_error')
     else
-        slim(:"dashboard", locals: {search: search, allinfo: allinfo, files:files, comp_without_ext: comp_without_ext, trans_without_ext: trans_without_ext, progproj:progproj})
+        slim(:"dashboard", locals: {search: search, allinfo: allinfo, files:files, comps: comps, trans: trans, progproj:progproj})
     end
 end
 
@@ -131,7 +152,7 @@ get("/files/:i") do
             comments_info[parent_id]["replies"] << comment
         end
     end
-    slim(:"files/show", locals: {comments_info: comments_info.values, song_id: song_id})
+    slim(:"files/show", locals: {comments_info: comments_info.values, song_id: song_id, compositions_folder: compositions_folder, transcriptions_folder: transcriptions_folder})
 end
 
 #Uploads a comment to the database
@@ -140,8 +161,10 @@ post("/files/:id/comment") do
     comment = params[:comment]
     parent_id = params[:parent_id]
     song_id = params[:id]
+    p song_id
     upload_comment(comment, parent_id, song_id)
-    redirect("/files/#{params[:id]}")
+    #Måste fixa så att man kommer tillbaka till samma sida efter man kommenterat och inte till startsidan
+    redirect("/dashboard")
 end
 
 #Displays the sign in page
@@ -190,7 +213,7 @@ post("/users/new") do
         redirect("/error_email_exist") 
     else
         create_user = create_user(username, email, password_digest)
-        redirect("/dashboard")
+        redirect("/users/sign_in")
     end
 end
 
