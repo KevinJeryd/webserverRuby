@@ -27,10 +27,10 @@ def comment_info()
         """)
 end
 
-def upload_comment(comment, parent_id, song_id)
+def upload_comment(comment, user_id, parent_id, song_id)
     db = SQLite3::Database.new("db/database.db")
     db.results_as_hash = true
-    db.execute("INSERT INTO comments (comment, user_id, parent_id, song_id) VALUES (?, #{session[:user_id]}, ?, ?)", [comment, parent_id, song_id])
+    db.execute("INSERT INTO comments (comment, user_id, parent_id, song_id) VALUES (?, ?, ?, ?)", [comment, user_id, parent_id, song_id])
 end
 
 def confirm_user(emailreg)
@@ -68,4 +68,16 @@ def update_file(new_comment, comment_id)
     db.results_as_hash = true
     db.execute("UPDATE comments SET comment = ? WHERE comment_id = ?",[new_comment, comment_id])
 
+end
+
+def existing_emails()
+    db = SQLite3::Database.new("db/database.db")
+    db.results_as_hash = true
+    db.execute("SELECT email FROM users")
+end
+
+def file_info()
+    db = SQLite3::Database.new("db/database.db")
+    db.results_as_hash = true
+    db.execute("SELECT * FROM files")
 end

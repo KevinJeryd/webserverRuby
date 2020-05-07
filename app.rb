@@ -9,10 +9,7 @@ enable :sessions
 
 #Fixa kommentarer, kolla ca rad 160
 
-
-db = SQLite3::Database.new("db/database.db")
-db.results_as_hash = true
-existing_emails = db.execute("SELECT email FROM users")
+existing_emails()
 
 files = Dir.entries("public/audio")
 files = files[2..files.length-1]
@@ -20,7 +17,7 @@ files = files[2..files.length-1]
 compositions_folder = Dir.entries("public/audio/Compositions")
 transcriptions_folder = Dir.entries("public/audio/Transcriptions")
 
-file_info = db.execute("SELECT * FROM files")
+file_info = file_info()
 
 comps = []
 trans = []
@@ -29,7 +26,7 @@ before do
     compositions_folder = Dir.entries("public/audio/Compositions")
     transcriptions_folder = Dir.entries("public/audio/Transcriptions")
     
-    file_info = db.execute("SELECT * FROM files")
+    file_info = file_info()
 
     comps = []
     trans = []
@@ -136,23 +133,27 @@ end
 #Displays the page for chosen composition
 #
 get("/files/:i") do
-    song_id = params[:i]
-    allinfo = user_info(session[:user_id])    
-    
-    allcommentinfo = comment_info()
+    if session[:user_id] == nil
+        redirect('/must_be_logged_in_error')
+    else
+        song_id = params[:i]
+        allinfo = user_info(session[:user_id])    
+        
+        allcommentinfo = comment_info()
 
-    comments_info = {}
+        comments_info = {}
 
-    allcommentinfo.each do |comment|
-        if !comment["parent_id"]
-            comments_info[comment["comment_id"]] = comment
-            comment["replies"] = []
-        else
-            parent_id = comment["parent_id"]
-            comments_info[parent_id]["replies"] << comment
+        allcommentinfo.each do |comment|
+            if !comment["parent_id"]
+                comments_info[comment["comment_id"]] = comment
+                comment["replies"] = []
+            else
+                parent_id = comment["parent_id"]
+                comments_info[parent_id]["replies"] << comment
+            end
         end
+        slim(:"files/show", locals: {comments_info: comments_info.values, song_id: song_id, compositions_folder: compositions_folder, transcriptions_folder: transcriptions_folder})
     end
-    slim(:"files/show", locals: {comments_info: comments_info.values, song_id: song_id, compositions_folder: compositions_folder, transcriptions_folder: transcriptions_folder})
 end
 
 #Uploads a comment to the database
@@ -161,8 +162,9 @@ post("/files/:id/comment") do
     comment = params[:comment]
     parent_id = params[:parent_id]
     song_id = params[:id]
+    user_id = session[:user_id]
     p song_id
-    upload_comment(comment, parent_id, song_id)
+    upload_comment(comment, user_id, parent_id, song_id)
     #Måste fixa så att man kommer tillbaka till samma sida efter man kommenterat och inte till startsidan
     redirect("/dashboard")
 end
