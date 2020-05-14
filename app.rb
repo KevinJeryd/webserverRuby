@@ -4,6 +4,7 @@ require "sqlite3"
 require "bcrypt"
 # require "highline/import"
 require_relative "model.rb"
+require 'timeout'
 
 enable :sessions
 
@@ -178,22 +179,47 @@ end
 #Verifies the password and email and if correct logs in the user and redirects to either the logged in main page or error page if wrong.
 #
 #
+attempts = 0
+latest_attempt = Time.now.to_i
 post("/users/sign_in") do
     emailreg = params[:emailreg]
     session[:username] = emailreg
     passwordreg = params[:passwordreg]
     result = confirm_user(emailreg)
+    ip = request.ip
 
     if result.empty?
         redirect("/error")
     end
 
-    password_digest_reg = result.first["password"]
-    if BCrypt::Password.new(password_digest_reg) == passwordreg
-        session[:user_id] = result.first["user_id"]
-        redirect("/dashboard")
+    now = Time.now.to_i
+
+    last_login = last_login()
+
+    wait_time = 1 << (attempts - 3)
+
+    allowed = last_login + wait_time < now
+
+    p last_login
+
+    p wait_time
+
+    p allowed
+    
+    if allowed == false
+        redirect('/error')   
     else
-        redirect("/error")
+        password_digest_reg = result.first["password"]
+        if BCrypt::Password.new(password_digest_reg) == passwordreg
+            session[:user_id] = result.first["user_id"]
+            attempts = 0
+            attempt_login(ip, attempts, latest_attempt)
+            redirect("/dashboard")
+        else
+            attempts += 10
+            attempt_login(ip, attempts, latest_attempt)
+            redirect("/users/sign_in")
+        end
     end
 end
 

@@ -81,3 +81,17 @@ def file_info()
     db.results_as_hash = true
     db.execute("SELECT * FROM files")
 end
+
+def attempt_login(ip, attempts, latest_attempt)
+    db = SQLite3::Database.new("db/database.db")
+    db.results_as_hash = true
+#   Anv'nd inte INSERT använd UPDATE istället och uppdatera alla värden
+#    db.execute("INSERT INTO attempt_login (ip, attempts) values (?, ?)", [ip, attempts])
+    db.execute("UPDATE attempt_login SET ip = ?, attempts = ?, latest_attempt = ?", [ip, attempts, latest_attempt])
+end
+
+def last_login()
+    db = SQLite3::Database.new("db/database.db")
+    db.results_as_hash = true
+    db.execute("SELECT latest_attempt FROM attempt_login")[0][0]
+end
