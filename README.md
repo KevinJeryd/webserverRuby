@@ -1,0 +1,4 @@
+# webserverRuby
+By inserting stuff into the audio folder in the public map, the list will start filling up and you can listen to the songs from within the site automatically. You can also uploads songs from the website and they will be put onto the site. If you click on the song you should come to a comment section where you can have discussions. You need to create an account to be able to listen to the stuff on the website, the passwords are encrypted but I have not implemented a check to see if it's a mail. This is however trivial and easy to solve but I have since long discarded this project and won't update it. In the profile you can add a profile picture to your account.
+
+Just unzip the webbserver.zip and run it by running "ruby app.rb" in the cmd (inside the folder you decide to unzip the webbserver.zip), I can't confirm that it works with all versions of ruby. Latest checked working version is Ruby2.5
