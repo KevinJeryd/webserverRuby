@@ -1,4 +1,5 @@
 require "slim"
+require "yard"
 require "sinatra"
 require "sqlite3"
 require "bcrypt"
